@@ -25,6 +25,15 @@ const char* password = "andrea01";
 // message you
 
 
+// sensore distanza
+
+#define TRIG 21
+#define ECHO 22
+
+long readout;
+float distanza;
+
+
 #ifdef ESP8266
   X509List cert(TELEGRAM_CERTIFICATE_ROOT);
 #endif
@@ -39,8 +48,18 @@ unsigned long lastTimeBotRan;
 const int ledPin = 2;
 bool ledState = LOW;
 
+//distanza ultrasuoni 
+float distanzaUltrasuoni(){
+  digitalWrite(TRIG, HIGH);
+      delayMicroseconds(9);  //impulso da 10us
+      digitalWrite(TRIG, LOW);
+      readout = pulseIn(ECHO, HIGH);
+      distanza = (float)readout/58;
+      return distanza;
+}
+
 // Handle what happens when you receive new messages
-void handleNewMessages(int numNewMessages) {
+void handleNewMessages(int numNewMessages, float metriUltrasuoni) {
   Serial.println("handleNewMessages");
   Serial.println(String(numNewMessages));
 
@@ -66,16 +85,26 @@ void handleNewMessages(int numNewMessages) {
       String welcome = "Welcome, " + from_name + ".\n";
       welcome += "/alza la sbarra\n";
       bot.sendMessage(chat_id, welcome, "");
+
+  
     }
 
-    if (text == "/paga") {
-      for(int posDegrees = 0; posDegrees <= 180; posDegrees++) {
-        servo1.write(posDegrees);
-        Serial.println(posDegrees);
-        delay(10);
-      }
+
+      
+
+    if (text == "/paga" && metriUltrasuoni<10) {
+      //sbarra che si alza 
+        delay(10000);
+        servo1.write(10);
       Serial.println(chat_id);
       Serial.println(from_name);
+      
+      
+      
+    }
+
+    if (text == "/iscrizione") {
+      
       
       
       
@@ -88,6 +117,10 @@ void handleNewMessages(int numNewMessages) {
 void setup() {
   Serial.begin(115200);
 
+  // ultrasuoni 
+  pinMode (TRIG, OUTPUT);
+pinMode (ECHO, INPUT);
+
   #ifdef ESP8266
     configTime(0, 0, "pool.ntp.org");      // get UTC time via NTP
     client.setTrustAnchors(&cert); // Add root certificate for api.telegram.org
@@ -96,6 +129,8 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, ledState);
   servo1.attach(servoPin);
+  servo1.write(90);
+  
   
   // Connect to Wi-Fi
   WiFi.mode(WIFI_STA);
@@ -114,12 +149,22 @@ void setup() {
 void loop() {
   if (millis() > lastTimeBotRan + botRequestDelay)  {
     int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-
+    float metriUltrasuono = distanzaUltrasuoni();
     while(numNewMessages) {
       Serial.println("got response");
-      handleNewMessages(numNewMessages);
+      
+      handleNewMessages(numNewMessages, metriUltrasuono);
+  
       numNewMessages = bot.getUpdates(bot.last_message_received + 1);
     }
     lastTimeBotRan = millis();
+     if(metriUltrasuono >10){
+        servo1.write(90);
+      }
   }
 }
+
+
+
+// aggiungere il secondo ultrasuoni , paga , gestione della data e ora e il costo all'ora per persona 
+// optional : schermo, comunicazione tra 2 arduini , batteria 
