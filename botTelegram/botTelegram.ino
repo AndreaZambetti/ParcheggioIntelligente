@@ -1,5 +1,9 @@
 // servo 
 #include <Servo.h>
+#include <Wire.h>
+#include <RTClib.h>
+// libreria per data e ora 
+RTC_DS3231 rtc;
 static const int servoPin = 13;
 Servo servo1;
 // telegram
@@ -27,11 +31,19 @@ const char* password = "andrea01";
 
 // sensore distanza
 
-#define TRIG 21
-#define ECHO 22
+#define TRIG_ENTRY 21
+#define ECHO_ENTRY 22
 
-long readout;
-float distanza;
+#define TRIG_EXIT 12
+#define ECHO_EXIT 14
+#define N_PARCHEGGI 3
+
+
+struct Cliente{
+  String nome;
+  DateTime date;
+};
+
 
 
 #ifdef ESP8266
@@ -47,32 +59,47 @@ unsigned long lastTimeBotRan;
 
 const int ledPin = 2;
 bool ledState = LOW;
+Cliente clienti[N_PARCHEGGI];
+int contatore =0;
+
+
+
 
 //distanza ultrasuoni 
-float distanzaUltrasuoni(){
-  digitalWrite(TRIG, HIGH);
+float distanzaUltrasuoniIngresso(){
+  float readout=0;
+  float distanza=0;
+  digitalWrite(TRIG_ENTRY, HIGH);
       delayMicroseconds(9);  //impulso da 10us
-      digitalWrite(TRIG, LOW);
-      readout = pulseIn(ECHO, HIGH);
+      digitalWrite(TRIG_ENTRY, LOW);
+      readout = pulseIn(ECHO_ENTRY, HIGH);
       distanza = (float)readout/58;
       return distanza;
 }
 
+float distanzaUltrasuoniUscita(){
+  float readout = 0;
+  float distanza =0;
+  digitalWrite(TRIG_EXIT, HIGH);
+      delayMicroseconds(9);  //impulso da 10us
+      digitalWrite(TRIG_EXIT, LOW);
+      readout = pulseIn(ECHO_EXIT, HIGH);
+      distanza = (float)readout/58;
+      return distanza;
+}
+
+
+
+
+
 // Handle what happens when you receive new messages
-void handleNewMessages(int numNewMessages, float metriUltrasuoni) {
+void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float metriUltrasuoniUscita) {
   Serial.println("handleNewMessages");
   Serial.println(String(numNewMessages));
 
   for (int i=0; i<numNewMessages; i++) {
     // Chat id of the requester
     String chat_id = String(bot.messages[i].chat_id);
-    // if (chat_id != CHAT_ID){
-    //   bot.sendMessage(chat_id, "Unauthorized user", "");
-    //   continue;
-    // }
-
-    
-    
     // Print the received message
     String text = bot.messages[i].text;
     Serial.println(text);
@@ -85,28 +112,55 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoni) {
       String welcome = "Welcome, " + from_name + ".\n";
       welcome += "/alza la sbarra\n";
       bot.sendMessage(chat_id, welcome, "");
+      
 
   
     }
 
-
-      
-
-    if (text == "/paga" && metriUltrasuoni<10) {
+    if (text == "/entra"   && metriUltrasuoniIngresso<10) {
       //sbarra che si alza 
-        delay(10000);
+        delay(1000);
         servo1.write(10);
-      Serial.println(chat_id);
-      Serial.println(from_name);
+
+        clienti[contatore].nome = from_name;
+        clienti[contatore].date = rtc.now();
+        DateTime now = rtc.now();
+  
+  // Stampa la data e l'ora sulla porta seriale
+        Serial.print(now.year(), DEC);
+        Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(" ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+
+        for(i=0; i<contatore ; i++){
+        Serial.println(clienti[i].nome);
+        
+        }
+        contatore= contatore +1;
+
+        
+
+
+       
       
       
       
     }
 
-    if (text == "/iscrizione") {
-      
-      
-      
+    if (text == "/paga" && metriUltrasuoniUscita <10) {
+      //sbarra che si alza 
+        delay(1000);
+        servo1.write(10);
+        //Serial.println(chat_id);
+        //Serial.println(from_name);
       
     }
       
@@ -116,18 +170,29 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoni) {
 
 void setup() {
   Serial.begin(115200);
+  
+  
+  // serve per la data 
+  Wire.begin();
+  rtc.begin();
+  
+  // Imposta la data e l'ora del RTC
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  /////////
 
   // ultrasuoni 
-  pinMode (TRIG, OUTPUT);
-pinMode (ECHO, INPUT);
+  pinMode (TRIG_ENTRY, OUTPUT);
+pinMode (ECHO_ENTRY, INPUT);
+
+  pinMode (TRIG_EXIT, OUTPUT);
+pinMode (ECHO_EXIT, INPUT);
 
   #ifdef ESP8266
     configTime(0, 0, "pool.ntp.org");      // get UTC time via NTP
     client.setTrustAnchors(&cert); // Add root certificate for api.telegram.org
   #endif
 
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, ledState);
+  
   servo1.attach(servoPin);
   servo1.write(90);
   
@@ -147,21 +212,27 @@ pinMode (ECHO, INPUT);
 }
 
 void loop() {
+    float metriUltrasuonoIngresso = distanzaUltrasuoniIngresso();
+    float metriUltrasuonoUscita = distanzaUltrasuoniUscita();
+    
   if (millis() > lastTimeBotRan + botRequestDelay)  {
     int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-    float metriUltrasuono = distanzaUltrasuoni();
+  
     while(numNewMessages) {
       Serial.println("got response");
       
-      handleNewMessages(numNewMessages, metriUltrasuono);
+      handleNewMessages(numNewMessages, metriUltrasuonoIngresso,  metriUltrasuonoUscita);
   
       numNewMessages = bot.getUpdates(bot.last_message_received + 1);
     }
     lastTimeBotRan = millis();
-     if(metriUltrasuono >10){
-        servo1.write(90);
-      }
+     
   }
+  if(metriUltrasuonoUscita  >10 &&  metriUltrasuonoIngresso > 10){
+        servo1.write(90);
+    }
+
+    delay(100);
 }
 
 
