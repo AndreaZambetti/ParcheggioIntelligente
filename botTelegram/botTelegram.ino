@@ -41,7 +41,8 @@ const char* password = "andrea01";
 
 struct Cliente{
   String nome;
-  DateTime date;
+  long date;
+  String id;
 };
 
 
@@ -61,7 +62,17 @@ const int ledPin = 2;
 bool ledState = LOW;
 Cliente clienti[N_PARCHEGGI];
 int contatore =0;
+int nPosti = 3;
 
+// questo controllo sarebbe da fare con gli id 
+int controlloNomi(String id){
+  for(int i=0 ; i< contatore ; i ++){
+    if(clienti[i].id == id){
+        return 0;
+    }
+  }return 1;
+  
+}
 
 
 
@@ -106,61 +117,60 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
 
     String from_name = bot.messages[i].from_name;
     
-    
-
+  
     if (text == "/start") {
       String welcome = "Welcome, " + from_name + ".\n";
       welcome += "/alza la sbarra\n";
       bot.sendMessage(chat_id, welcome, "");
-      
-
-  
     }
 
-    if (text == "/entra"   && metriUltrasuoniIngresso<10) {
+
+    if (text == "/entra"   && metriUltrasuoniIngresso<10 && nPosti>0  && controlloNomi(chat_id)==1) {
+      
       //sbarra che si alza 
         delay(1000);
         servo1.write(10);
 
         clienti[contatore].nome = from_name;
-        clienti[contatore].date = rtc.now();
-        DateTime now = rtc.now();
-  
-  // Stampa la data e l'ora sulla porta seriale
-        Serial.print(now.year(), DEC);
-        Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(" ");
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.println();
-
-        for(i=0; i<contatore ; i++){
-        Serial.println(clienti[i].nome);
+        clienti[contatore].date = millis();
+        clienti[contatore].id = chat_id;
         
-        }
+        nPosti= nPosti -1;
         contatore= contatore +1;
-
-        
-
-
-       
-      
-      
-      
+        for(i=0; i<contatore ; i++){
+        Serial.print(clienti[i].nome);
+        Serial.print("data");
+        Serial.println(clienti[i].date);
+        }
+            
     }
 
     if (text == "/paga" && metriUltrasuoniUscita <10) {
       //sbarra che si alza 
         delay(1000);
         servo1.write(10);
-        //Serial.println(chat_id);
-        //Serial.println(from_name);
+        for(i=0; i<contatore ; i++){
+          if( from_name == clienti[i].nome ){
+              long permanenzaSec = (millis()-clienti[i].date)/1000;
+              float prezzo = permanenzaSec * 0.005; // 0.5 centesimi al secondo
+              String tariffa = "il pedaggio per la sosta e' " + ((String)prezzo) + "$\n";
+              bot.sendMessage(chat_id, tariffa, "");
+          }
+        }
+// viene utilizzato per andare a rimuovere gli elementi 
+        int nuova_dimensione = contatore - 1;
+        for (int i = 0; i < contatore; i++) {
+          if (clienti[i].nome == from_name) {
+            for (int j = i; j < contatore - 1; j++) {
+              clienti[j] = clienti[j+1];
+             }
+            
+            break;
+          }
+        }
+        contatore = nuova_dimensione;
+        nPosti= nPosti+1;
+      
       
     }
       
@@ -237,5 +247,5 @@ void loop() {
 
 
 
-// aggiungere il secondo ultrasuoni , paga , gestione della data e ora e il costo all'ora per persona 
+
 // optional : schermo, comunicazione tra 2 arduini , batteria 
