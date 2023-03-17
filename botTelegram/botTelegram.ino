@@ -83,6 +83,10 @@ int controlloNomi(String id){
   
 }
 
+// inviare la stringa
+
+
+
 
 
 //distanza ultrasuoni 
@@ -151,9 +155,13 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         Serial.print("data");
         Serial.println(clienti[i].date);
 
-        SerialX.write(5);
+        
  
         }
+
+        SerialX.write("ciao stronzi");
+
+        delay(1000);
             
     }
 
@@ -167,7 +175,8 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
               float prezzo = permanenzaSec * 0.005; // 0.5 centesimi al secondo
               String tariffa = "il pedaggio per la sosta e' " + ((String)prezzo) + "$\n";
               bot.sendMessage(chat_id, tariffa, "");
-              SerialX.write(50);
+              SerialX.write("tariffa");
+              
           }
         }
 // viene utilizzato per andare a rimuovere gli elementi 
@@ -183,6 +192,7 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         }
         contatore = nuova_dimensione;
         nPosti= nPosti+1;
+
       
       
     }

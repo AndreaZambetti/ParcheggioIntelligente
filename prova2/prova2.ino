@@ -31,7 +31,8 @@ void loop() {
   if (SerialS.available()){
     //ricevo un carattere dalla seriale software
     //lo scrivo sulla seriale vera, collegata al pc
-    Serial.print(SerialS.read());
+    
+    Serial.println(SerialS.readString());
   }
 }
 
