@@ -1,3 +1,12 @@
+#include <SoftwareSerial.h>
+int v = 0;
+
+#define SOFTRX 17
+#define SOFTTX 16
+
+SoftwareSerial SerialX(SOFTRX, SOFTTX);
+
+
 // servo 
 #include <Servo.h>
 #include <Wire.h>
@@ -141,6 +150,9 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         Serial.print(clienti[i].nome);
         Serial.print("data");
         Serial.println(clienti[i].date);
+
+        SerialX.write(5);
+ 
         }
             
     }
@@ -155,6 +167,7 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
               float prezzo = permanenzaSec * 0.005; // 0.5 centesimi al secondo
               String tariffa = "il pedaggio per la sosta e' " + ((String)prezzo) + "$\n";
               bot.sendMessage(chat_id, tariffa, "");
+              SerialX.write(50);
           }
         }
 // viene utilizzato per andare a rimuovere gli elementi 
@@ -179,8 +192,13 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
 }
 
 void setup() {
-  Serial.begin(115200);
-  
+  Serial.begin(9600);
+
+  // comunciazione seriale 
+
+  pinMode(SOFTTX, OUTPUT);
+  pinMode(SOFTRX, INPUT);
+  SerialX.begin(9600);
   
   // serve per la data 
   Wire.begin();
@@ -222,6 +240,7 @@ pinMode (ECHO_EXIT, INPUT);
 }
 
 void loop() {
+  
     float metriUltrasuonoIngresso = distanzaUltrasuoniIngresso();
     float metriUltrasuonoUscita = distanzaUltrasuoniUscita();
     
