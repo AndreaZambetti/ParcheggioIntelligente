@@ -13,6 +13,12 @@
 #define SOFTRX 17
 #define SOFTTX 16
 
+int nPostiDisponibili =5;
+int tempo = 20000;
+int set =0;
+
+
+
 SoftwareSerial SerialS(SOFTRX, SOFTTX);
 
 void setup() {  
@@ -28,11 +34,20 @@ void setup() {
 }
 
 void loop() {
-  if (SerialS.available()){
-    //ricevo un carattere dalla seriale software
-    //lo scrivo sulla seriale vera, collegata al pc
-    
-    Serial.println(SerialS.readString());
+
+
+  if (  set==0 &&  millis() >= tempo ){
+    Serial.print("POSTI LIBERI  ");
+    Serial.println(nPostiDisponibili);
+    set=1;
+  }
+ 
+
+ if (SerialS.available() ) {
+   Serial.println(SerialS.readString());
+   set=0;
+   tempo = millis() + 10000;
+
   }
 }
 

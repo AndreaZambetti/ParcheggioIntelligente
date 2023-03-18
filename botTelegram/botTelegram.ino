@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-int v = 0;
+
 
 #define SOFTRX 17
 #define SOFTTX 16
@@ -83,7 +83,13 @@ int controlloNomi(String id){
   
 }
 
-// inviare la stringa
+// // VEDERE SE ARRIVANO I MESSAGGI PER L'AGGIORNAMENTO POSTI 
+// void messaggiArrivo(){
+//   if(SerialX.availabile()){
+    
+//     SerialX.write(nPosti);
+//   }
+// }
 
 
 
@@ -143,6 +149,8 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
       //sbarra che si alza 
         delay(1000);
         servo1.write(10);
+        String benvenuto = "benvenuto " + ((String)from_name);
+        SerialX.write(benvenuto.c_str());
 
         clienti[contatore].nome = from_name;
         clienti[contatore].date = millis();
@@ -150,16 +158,10 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         
         nPosti= nPosti -1;
         contatore= contatore +1;
-        for(i=0; i<contatore ; i++){
-        Serial.print(clienti[i].nome);
-        Serial.print("data");
-        Serial.println(clienti[i].date);
+       
+        
 
         
- 
-        }
-
-        SerialX.write("ciao stronzi");
 
         delay(1000);
             
@@ -175,7 +177,7 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
               float prezzo = permanenzaSec * 0.005; // 0.5 centesimi al secondo
               String tariffa = "il pedaggio per la sosta e' " + ((String)prezzo) + "$\n";
               bot.sendMessage(chat_id, tariffa, "");
-              SerialX.write("tariffa");
+              SerialX.write(tariffa.c_str());
               
           }
         }
@@ -243,14 +245,20 @@ pinMode (ECHO_EXIT, INPUT);
   #endif
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
+    SerialX.write("Connecting to WiFi..");
+    // doppio 
     Serial.println("Connecting to WiFi..");
   }
   // Print ESP32 Local IP Address
+  SerialX.write("connesso");
   Serial.println(WiFi.localIP());
+  
 }
 
 void loop() {
-  
+
+    // vedere se ce qualche messaggio
+    //messaggiArrivo();
     float metriUltrasuonoIngresso = distanzaUltrasuoniIngresso();
     float metriUltrasuonoUscita = distanzaUltrasuoniUscita();
     
