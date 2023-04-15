@@ -149,7 +149,7 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
       //sbarra che si alza 
         delay(1000);
         servo1.write(10);
-        String benvenuto = "benvenuto " + ((String)from_name);
+        String benvenuto = "*benvenuto " + ((String)from_name);
         SerialX.write(benvenuto.c_str());
 
         clienti[contatore].nome = from_name;
@@ -177,7 +177,8 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
               float prezzo = permanenzaSec * 0.005; // 0.5 centesimi al secondo
               String tariffa = "il pedaggio per la sosta e' " + ((String)prezzo) + "$\n";
               bot.sendMessage(chat_id, tariffa, "");
-              SerialX.write(tariffa.c_str());
+              String tar = "#"+((String)prezzo);
+              SerialX.write(tar.c_str());
               
           }
         }
@@ -245,12 +246,12 @@ pinMode (ECHO_EXIT, INPUT);
   #endif
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    SerialX.write("Connecting to WiFi..");
+    SerialX.write("@Connecting to WiFi.." );
     // doppio 
     Serial.println("Connecting to WiFi..");
   }
-  // Print ESP32 Local IP Address
-  SerialX.write("connesso");
+  delay(2000);
+  SerialX.write("@connesso");
   Serial.println(WiFi.localIP());
   
 }
