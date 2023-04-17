@@ -96,15 +96,10 @@ void loop() {
     lcd.setCursor(0, 1);
     lcd.print(" POSTI LIBERI  ");
     lcd.print(nPostiDisponibili);
-
-
-    
-    
-    
-    
-    
     set=1;
   }
+
+  
  
 
 //  if (SerialS.available() ) {

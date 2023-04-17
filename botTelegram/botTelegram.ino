@@ -71,16 +71,37 @@ const int ledPin = 2;
 bool ledState = LOW;
 Cliente clienti[N_PARCHEGGI];
 int contatore =0;
-int nPosti = 3;
+int nPosti = 5;
 
 // questo controllo sarebbe da fare con gli id 
 int controlloNomi(String id){
   for(int i=0 ; i< contatore ; i ++){
     if(clienti[i].id == id){
+        bot.sendMessage(id, "sei gia' dentro ", "");
         return 0;
     }
-  }return 1;
+  }
+  return 1;
   
+}// controllo se prima di pagare e' dentro 
+int controlloDentro(String id){
+  for(int i=0 ; i< contatore ; i ++){
+    if(clienti[i].id == id){
+        return 1;
+    }
+  }
+  bot.sendMessage(id, "prima di pagare devi entrare !! ", "");
+  return 0;
+  
+}
+
+//
+int controlloIngUsc(String id,float dist ){
+  if  (dist<10){
+    return 1;
+  }
+  bot.sendMessage(id, "non sei davanti al sensore", "");
+  return 0;
 }
 
 // // VEDERE SE ARRIVANO I MESSAGGI PER L'AGGIORNAMENTO POSTI 
@@ -144,11 +165,11 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
     }
 
 
-    if (text == "/entra"   && metriUltrasuoniIngresso<10 && nPosti>0  && controlloNomi(chat_id)==1) {
+    if (text == "/entra"   && controlloIngUsc(chat_id, metriUltrasuoniIngresso)==1 && nPosti>0  && controlloNomi(chat_id)==1) {
       
       //sbarra che si alza 
         delay(1000);
-        servo1.write(10);
+        servo1.write(130);
         String benvenuto = "*benvenuto " + ((String)from_name);
         SerialX.write(benvenuto.c_str());
 
@@ -167,10 +188,10 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
             
     }
 
-    if (text == "/paga" && metriUltrasuoniUscita <10) {
+    if (text == "/paga" && controlloIngUsc(chat_id, metriUltrasuoniUscita)==1  && controlloDentro(chat_id)==1) {
       //sbarra che si alza 
         delay(1000);
-        servo1.write(10);
+        servo1.write(130);
         for(i=0; i<contatore ; i++){
           if( from_name == clienti[i].nome ){
               long permanenzaSec = (millis()-clienti[i].date)/1000;
@@ -235,7 +256,7 @@ pinMode (ECHO_EXIT, INPUT);
 
   
   servo1.attach(servoPin);
-  servo1.write(90);
+  servo1.write(55);
   
   
   // Connect to Wi-Fi
@@ -245,8 +266,8 @@ pinMode (ECHO_EXIT, INPUT);
     client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
   #endif
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    SerialX.write("@Connecting to WiFi.." );
+    delay(2000);
+    SerialX.write("@connecting to wifi ");
     // doppio 
     Serial.println("Connecting to WiFi..");
   }
@@ -277,7 +298,7 @@ void loop() {
      
   }
   if(metriUltrasuonoUscita  >10 &&  metriUltrasuonoIngresso > 10){
-        servo1.write(90);
+        servo1.write(55);
     }
 
     delay(100);
