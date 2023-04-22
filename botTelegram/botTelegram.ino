@@ -26,16 +26,14 @@ Servo servo1;
 #include <UniversalTelegramBot.h>   
 #include <ArduinoJson.h>
 
-// Replace with your network credentials
+// aggiunta password e id wi-fi
 const char* ssid = "iPhone";
 const char* password = "andrea01";
 
 // Initialize Telegram BOT
 #define BOTtoken "6079102505:AAEUnmQ9noONaKM22EZ0CZKTM3ZJO54FvD4"  // your Bot Token (Get from Botfather)
 
-// Use @myidbot to find out the chat ID of an individual or a group
-// Also note that you need to click "start" on a bot before it can
-// message you
+
 
 
 // sensore distanza
@@ -45,7 +43,9 @@ const char* password = "andrea01";
 
 #define TRIG_EXIT 12
 #define ECHO_EXIT 14
-#define N_PARCHEGGI 3
+#define N_PARCHEGGI 1
+
+
 
 
 struct Cliente{
@@ -63,7 +63,7 @@ struct Cliente{
 WiFiClientSecure client;
 UniversalTelegramBot bot(BOTtoken, client);
 
-// Checks for new messages every 1 second.
+// controlla se c'e' un messaggio ogni 1 s
 int botRequestDelay = 1000;
 unsigned long lastTimeBotRan;
 
@@ -71,9 +71,9 @@ const int ledPin = 2;
 bool ledState = LOW;
 Cliente clienti[N_PARCHEGGI];
 int contatore =0;
-int nPosti = 5;
+int nPosti = 1;
 
-// questo controllo sarebbe da fare con gli id 
+//controllo per vedere se una persona e' gia dentro
 int controlloNomi(String id){
   for(int i=0 ; i< contatore ; i ++){
     if(clienti[i].id == id){
@@ -83,7 +83,7 @@ int controlloNomi(String id){
   }
   return 1;
   
-}// controllo se prima di pagare e' dentro 
+}// controllo che prima di pagare guarda se quel id e' entrato  
 int controlloDentro(String id){
   for(int i=0 ; i< contatore ; i ++){
     if(clienti[i].id == id){
@@ -95,7 +95,25 @@ int controlloDentro(String id){
   
 }
 
-//
+
+
+// metodo che ci permette di vedere se ci sono posti disponibili
+
+int checkPosti( String id ,int nPosti){
+  
+    if(nPosti>0){
+       
+        return 1;
+        
+    }
+   
+  bot.sendMessage(id, "NON PUOI ENTRARE , PARCHEGGIO PIENO !!", "");
+
+  return 0;
+  
+}
+
+//controllo se la distanza dal sensore e' minore di 10 m 
 int controlloIngUsc(String id,float dist ){
   if  (dist<10){
     return 1;
@@ -116,23 +134,23 @@ int controlloIngUsc(String id,float dist ){
 
 
 
-//distanza ultrasuoni 
+// serve per vedere quanto e' la distanza dal ultrasuono di ingresso
 float distanzaUltrasuoniIngresso(){
   float readout=0;
   float distanza=0;
   digitalWrite(TRIG_ENTRY, HIGH);
-      delayMicroseconds(9);  //impulso da 10us
+      delayMicroseconds(9);  
       digitalWrite(TRIG_ENTRY, LOW);
       readout = pulseIn(ECHO_ENTRY, HIGH);
       distanza = (float)readout/58;
       return distanza;
 }
-
+// per vedere la distanza dal ultrasuono in uscita 
 float distanzaUltrasuoniUscita(){
   float readout = 0;
   float distanza =0;
   digitalWrite(TRIG_EXIT, HIGH);
-      delayMicroseconds(9);  //impulso da 10us
+      delayMicroseconds(9);  
       digitalWrite(TRIG_EXIT, LOW);
       readout = pulseIn(ECHO_EXIT, HIGH);
       distanza = (float)readout/58;
@@ -143,15 +161,15 @@ float distanzaUltrasuoniUscita(){
 
 
 
-// Handle what happens when you receive new messages
+// ci permette di ricevere messaggi dal bot di telegram
 void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float metriUltrasuoniUscita) {
   Serial.println("handleNewMessages");
   Serial.println(String(numNewMessages));
 
   for (int i=0; i<numNewMessages; i++) {
-    // Chat id of the requester
+  
     String chat_id = String(bot.messages[i].chat_id);
-    // Print the received message
+    
     String text = bot.messages[i].text;
     Serial.println(text);
 
@@ -164,12 +182,12 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
       bot.sendMessage(chat_id, welcome, "");
     }
 
-
-    if (text == "/entra"   && controlloIngUsc(chat_id, metriUltrasuoniIngresso)==1 && nPosti>0  && controlloNomi(chat_id)==1) {
+    // per entrare nel parcheggio
+    if (text == "/entra"   && controlloIngUsc(chat_id, metriUltrasuoniIngresso)==1 && checkPosti(chat_id,nPosti)==1  && controlloNomi(chat_id)==1) {
       
-      //sbarra che si alza 
+      
         delay(1000);
-        servo1.write(130);
+        
         String benvenuto = "*benvenuto " + ((String)from_name);
         SerialX.write(benvenuto.c_str());
 
@@ -185,13 +203,13 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         
 
         delay(1000);
+        servo1.write(130);
             
     }
-
+// uscire dal parcheggio
     if (text == "/paga" && controlloIngUsc(chat_id, metriUltrasuoniUscita)==1  && controlloDentro(chat_id)==1) {
       //sbarra che si alza 
         delay(1000);
-        servo1.write(130);
         for(i=0; i<contatore ; i++){
           if( from_name == clienti[i].nome ){
               long permanenzaSec = (millis()-clienti[i].date)/1000;
@@ -203,6 +221,7 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
               
           }
         }
+        servo1.write(130);
 // viene utilizzato per andare a rimuovere gli elementi 
         int nuova_dimensione = contatore - 1;
         for (int i = 0; i < contatore; i++) {
@@ -228,6 +247,8 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
 void setup() {
   Serial.begin(9600);
 
+  
+
   // comunciazione seriale 
 
   pinMode(SOFTTX, OUTPUT);
@@ -250,8 +271,8 @@ pinMode (ECHO_ENTRY, INPUT);
 pinMode (ECHO_EXIT, INPUT);
 
   #ifdef ESP8266
-    configTime(0, 0, "pool.ntp.org");      // get UTC time via NTP
-    client.setTrustAnchors(&cert); // Add root certificate for api.telegram.org
+    configTime(0, 0, "pool.ntp.org");     
+    client.setTrustAnchors(&cert); 
   #endif
 
   
@@ -279,8 +300,6 @@ pinMode (ECHO_EXIT, INPUT);
 
 void loop() {
 
-    // vedere se ce qualche messaggio
-    //messaggiArrivo();
     float metriUltrasuonoIngresso = distanzaUltrasuoniIngresso();
     float metriUltrasuonoUscita = distanzaUltrasuoniUscita();
     

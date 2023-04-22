@@ -33,17 +33,17 @@ int count = 0;
 int numbers[4] ;
 int cathodePins[] = {22, 21, 19, 4};
 
-byte table[10] {B11111100, B01100000, B11011010, B11110010, B01100110, B10110110, B10111110, B11100000, B11111110, B11110110};
+byte table[20] {B11111100, B01100000, B11011010, B11110010, B01100110, B10110110, B10111110, B11100000, B11111110, B11110110,B11111101, B01100001, B11011011, B11110011, B01100111, B10110111, B10111111, B11100001, B11111111, B11110111};
 //
 #define SOFTRX 17
 #define SOFTTX 16
 
-int nPostiDisponibili =5;
+int nPostiDisponibili =1;
 int tempo = 20000;
 int set =0;
 
 
-
+ // porta seriale UART 
 SoftwareSerial SerialS(SOFTRX, SOFTTX);
 
 void setup() {  
@@ -79,7 +79,6 @@ void setup() {
     lcd.backlight();                
    
     lcd.setCursor(0, 0);
-    // print the number of seconds since reset:
     lcd.print("PARCHEGGIO ESSELUNGA ");
     lcd.setCursor(0, 1);
      
@@ -100,14 +99,6 @@ void loop() {
   }
 
   
- 
-
-//  if (SerialS.available() ) {
-//    Serial.println(SerialS.readString());
-//    set=0;
-//    tempo = millis() + 10000;
-
-//   }
 
 
 timer.update();
@@ -115,35 +106,37 @@ if(SerialS.available()) {
     String  stringa = SerialS.readString();
     char inChar = stringa.charAt(0);
       switch (inChar) {
+        // messaggio in arrivo da UART per connessione wi-fi
         case '@':
-          // stampiamo sul lcd 
+          
           Serial.println(stringa.substring(1));
           lcd.clear();
           lcd.setCursor(0, 3);
           lcd.print(stringa.substring(1));
           
           set=0;
-          tempo = millis() + 30000;
+          tempo = millis() + 20000;
           break;
+          // mmessaggio in arrivo da UART per gestire l'entrata dal parcheggio
         case '#':
-         // valore numerico stampare sul 7 segmenti
-         
           timer.stop(timer_event); 
           screenOff();
          Serial.println(stringa.substring(1));
          number = (float)stringa.substring(1).toFloat(); 
          nPostiDisponibili = nPostiDisponibili +  1;
          // prova 
-          separate(number);
+         
+          separate(number*100);
           timer_event = timer.every(1, Display); 
           
           set=0;
           tempo = millis();
           break;
-        case '*':  // scrittura lcd
+          // messaggio in arrivo da UART per gestire l'uscita dal parcheggio
+        case '*':  
           Serial.println(stringa.substring(1)); 
           nPostiDisponibili = nPostiDisponibili-1;
-          //lcd
+          
           clearAll();
            lcd.setCursor(0, 1);
           lcd.print(stringa.substring(1));
@@ -171,13 +164,14 @@ if(SerialS.available()) {
 }
 
 
-/// aggiunta led 
+//  separa ogni numero per display 7 segmenti 
 void separate(long num) { 
   num1 = num / 1000;
   numbers[0] = num1;
   int num1_remove = num - (num1 * 1000);
   num2 = num1_remove / 100;
-  numbers[1] = num2;
+  // il +10 serve per accendere il punto del decimale 
+  numbers[1] = num2+10 ;
   int num2_remove = num1_remove - (num2 * 100);
   num3 = num2_remove / 10;
   numbers[2] = num3;
@@ -185,6 +179,7 @@ void separate(long num) {
   numbers[3] = num4;
 }
 
+// accendere dispaly 7 segmenti 
 void Display() {
   screenOff(); 
   digitalWrite(latchPin, LOW); 
@@ -196,7 +191,7 @@ void Display() {
     count = 0;
   }
 }
-
+// spegnere display 7 segmenti 
 void screenOff() { 
   digitalWrite(D4, HIGH);
   digitalWrite(D3, HIGH);
@@ -212,9 +207,6 @@ void clearAll(){
 
   lcd.setCursor(0, 3);
   lcd.print("connesso");
-
-  
-
   
 }
 
