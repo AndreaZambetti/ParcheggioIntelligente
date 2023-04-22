@@ -1,20 +1,8 @@
 #include <SoftwareSerial.h>
-
-
-#define SOFTRX 17
-#define SOFTTX 16
-
-SoftwareSerial SerialX(SOFTRX, SOFTTX);
-
-
-// servo 
-#include <Servo.h>
 #include <Wire.h>
 #include <RTClib.h>
-// libreria per data e ora 
-RTC_DS3231 rtc;
-static const int servoPin = 13;
-Servo servo1;
+// servo 
+#include <Servo.h>
 // telegram
 
 #ifdef ESP32
@@ -25,6 +13,22 @@ Servo servo1;
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>   
 #include <ArduinoJson.h>
+
+
+
+#define SOFTRX 17
+#define SOFTTX 16
+
+SoftwareSerial SerialX(SOFTRX, SOFTTX);
+
+
+
+// libreria per data e ora 
+RTC_DS3231 rtc;
+static const int servoPin = 13;
+Servo servo1;
+
+
 
 // aggiunta password e id wi-fi
 const char* ssid = "iPhone";
@@ -206,6 +210,16 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
         servo1.write(130);
             
     }
+
+     if (text == "/visualizza") {
+       delay(1000)
+              String tariffa = "parcheggi liberi  " + ((String)nPosti) + "$\n";
+              bot.sendMessage(chat_id, tariffa, "");
+
+        delay(1000);
+        
+            
+    }
 // uscire dal parcheggio
     if (text == "/paga" && controlloIngUsc(chat_id, metriUltrasuoniUscita)==1  && controlloDentro(chat_id)==1) {
       //sbarra che si alza 
@@ -250,7 +264,6 @@ void setup() {
   
 
   // comunciazione seriale 
-
   pinMode(SOFTTX, OUTPUT);
   pinMode(SOFTRX, INPUT);
   SerialX.begin(9600);

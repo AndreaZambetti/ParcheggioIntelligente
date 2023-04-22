@@ -1,5 +1,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
+#include "Timer.h" 
 
 #define SDA 13                    
 #define SCL 14                    
@@ -8,9 +10,9 @@
 LiquidCrystal_I2C lcd(0x27,20,4); 
 
 
-#include <SoftwareSerial.h>
+
 // aggiunta led 
-#include "Timer.h" 
+
 Timer timer; 
 
 float number = 0; 
