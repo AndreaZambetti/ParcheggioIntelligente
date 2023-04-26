@@ -212,9 +212,9 @@ void handleNewMessages(int numNewMessages, float metriUltrasuoniIngresso , float
     }
 
      if (text == "/visualizza") {
-       delay(1000)
-              String tariffa = "parcheggi liberi  " + ((String)nPosti) + "$\n";
-              bot.sendMessage(chat_id, tariffa, "");
+       delay(1000);
+              String park= "parcheggi liberi  " + ((String)nPosti) + "$\n";
+              bot.sendMessage(chat_id, park, "");
 
         delay(1000);
         
